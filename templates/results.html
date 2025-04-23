@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Briefing Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .weather-card { transition: transform 0.2s; }
+        .weather-card:hover { transform: translateY(-3px); }
+        .key-metric { font-size: 1.8rem; font-weight: 600; }
+        .metric-unit { font-size: 1rem; vertical-align: super; }
+        .raw-data { font-family: 'Courier New', monospace; font-size: 0.9rem; }
+        .phenomena-alert { padding: 0.5rem; margin: 0.5rem 0; }
+        .ai-summary { border-left: 4px solid #0dcaf0; background-color: #f8f9fa; }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">Flight Weather Briefing</h3>
+                <a href="/" class="btn btn-light btn-sm">New Briefing</a>
+            </div>
+            
+            <div class="card-body">
+                {% if report_type == 'summary' %}
+                <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+                    {% for airport in summary_data %}
+                    <div class="col">
+                        <div class="card h-100 weather-card border-{{ airport.color }}">
+                            <!-- Header with Key Metrics -->
+                            <div class="card-header bg-{{ airport.color }} text-white">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h5>{{ airport.icao }} ({{ airport.altitude }}ft)</h5>
+                                        <div class="key-metric mt-2">
+                                            {{ airport.wind }}<span class="metric-unit">kt</span>
+                                            <span class="mx-1">/</span>
+                                            {{ airport.visibility }}<span class="metric-unit">sm</span>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-light text-dark fs-6">{{ airport.classification }}</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-between mt-2">
+                                    <small>Ceiling: {{ airport.ceiling }}</small>
+                                    <div>
+                                        <span class="badge bg-info">{{ airport.pireps }} PIREPs</span>
+                                        <span class="badge bg-danger ms-1">{{ airport.sigmets }} SIGMETs</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Card Body -->
+                            <div class="card-body">
+                                <!-- Weather Phenomena -->
+                                <div class="alert alert-{{ airport.color }} phenomena-alert">
+                                    {% if airport.weather != 'None' %}
+                                        {{ airport.weather }}
+                                    {% else %}
+                                        No significant weather
+                                    {% endif %}
+                                </div>
+
+                                <!-- METAR/TAF Preview -->
+                                <div class="row g-2">
+                                    <div class="col-12">
+                                        <div class="card">
+                                            <div class="card-header py-1 small bg-dark text-white">
+                                                METAR
+                                            </div>
+                                            <div class="card-body p-2">
+                                                <code class="raw-data">{{ airport.metar }}</code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-12 mt-2">
+                                        <div class="card">
+                                            <div class="card-header py-1 small bg-dark text-white">
+                                                TAF
+                                            </div>
+                                            <div class="card-body p-2">
+                                                <code class="raw-data">{{ airport.taf }}</code>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% else %}
+                    {% for airport in detailed_data %}
+                    <div class="mb-5">
+                        <div class="card border-dark">
+                            <!-- Detailed View Header -->
+                            <div class="card-header bg-dark text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h4>{{ airport.icao }} ({{ airport.altitude }}ft)</h4>
+                                        <div class="key-metric">
+                                            {{ airport.wind }}<span class="metric-unit">kt</span>
+                                            <span class="mx-1">/</span>
+                                            {{ airport.visibility }}<span class="metric-unit">sm</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span class="badge bg-light text-dark fs-5">{{ airport.classification }}</span>
+                                        <div class="mt-2">
+                                            <span class="badge bg-info">{{ airport.pireps|length }} PIREPs</span>
+                                            <span class="badge bg-danger ms-1">{{ airport.sigmets|length }} SIGMETs</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <small>Ceiling: {{ airport.ceiling }} | Weather: {{ airport.weather }}</small>
+                                </div>
+                            </div>
+
+                            <!-- Detailed View Body -->
+                            <div class="card-body">
+                                {% if airport.ai_summary %}
+                                <div class="ai-summary p-3 mb-4">
+                                    <h5>AI Safety Analysis</h5>
+                                    <div class="summary-content">{{ airport.ai_summary }}</div>
+                                </div>
+                                {% endif %}
+
+                                <div class="row g-4">
+                                    <!-- Raw Data Column -->
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header bg-info text-white">
+                                                Raw Weather Data
+                                            </div>
+                                            <div class="card-body">
+                                                <h6>METAR</h6>
+                                                <pre class="raw-data">{{ airport.metar }}</pre>
+                                                <h6 class="mt-3">TAF</h6>
+                                                <pre class="raw-data">{{ airport.taf }}</pre>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Reports Column -->
+                                    <div class="col-md-6">
+                                        <div class="card h-100">
+                                            <div class="card-header bg-warning text-dark">
+                                                Weather Reports
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="mb-4">
+                                                    <h6>PIREPs ({{ airport.pireps|length }})</h6>
+                                                    {% if airport.pireps %}
+                                                    <div class="list-group">
+                                                        {% for pirep in airport.pireps %}
+                                                        <div class="list-group-item small">
+                                                            {{ pirep.raw }}
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% else %}
+                                                    <div class="alert alert-secondary">No PIREPs reported</div>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div>
+                                                    <h6>SIGMETs ({{ airport.sigmets|length }})</h6>
+                                                    {% if airport.sigmets %}
+                                                    <div class="list-group">
+                                                        {% for sigmet in airport.sigmets %}
+                                                        <div class="list-group-item small text-danger">
+                                                            {{ sigmet.raw }}
+                                                        </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% else %}
+                                                    <div class="alert alert-secondary">No active SIGMETs</div>
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="card-footer text-muted small">
+                Generated at {{ now.strftime('%Y-%m-%d %H:%M UTC') }}
+            </div>
+        </div>
+    </div>
+    
+</body>
+</html>
